@@ -1,0 +1,13 @@
+{
+    "name": "kunalvarma05/onedrive-client",
+    "description": "OneDrive PHP Client",
+    "keywords" : ["onedrive", "client", "php"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kunal Varma",
+            "email": "kunalvarma05@gmail.com"
+        }
+    ],
+    "require": {}
+}
