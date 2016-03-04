@@ -9,5 +9,7 @@
             "email": "kunalvarma05@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "guzzlehttp/guzzle": "~6.0"
+    }
 }
