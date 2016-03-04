@@ -127,6 +127,16 @@ class Client
     }
 
     /**
+     * Build URL for the Request
+     * @param  string $path Relative API path or endpoint
+     * @return string       The Full URL
+     */
+    protected function buildUrl($path = ""){
+        $path = urlencode($path);
+        return $this->getBasePath() . $path;
+    }
+
+    /**
      * Make Request to the API using Guzzle
      * @param  string $method  Method Type [GET|POST|PUT|DELETE]
      * @param  null|string|UriInterface $uri    URI for the Request
@@ -169,7 +179,7 @@ class Client
      * @return Object
      */
     public function listDrives(){
-        $uri = $this->getBasePath() . urlencode("/drives");
+        $uri = $this->buildUrl("/drives");
 
         $response = $this->makeRequest("GET", $uri);
         $responseContent = $this->decodeResponse($response);
@@ -184,7 +194,7 @@ class Client
      */
     public function getDrive($drive_id = null){
         $path = is_null($drive_id) ? "/drive" : "/drives/{$drive_id}";
-        $uri = $this->getBasePath() . urlencode($path);
+        $uri = $this->buildUrl($path);
 
         $response = $this->makeRequest("GET", $uri);
         $responseContent = $this->decodeResponse($response);
