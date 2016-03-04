@@ -3,6 +3,7 @@ namespace Kunnu\OneDrive;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Client as Guzzle;
+use Psr\Http\Message\ResponseInterface;
 
 class Client
 {
@@ -150,6 +151,33 @@ class Client
     }
 
     /**
+     * Decode the Response
+     * @param  string|\Psr\Http\Message\ResponseInterface $response Response object or string to decode
+     * @return string
+     */
+    protected function decodeResponse($response){
+        $body = $response;
+        if($response instanceof ResponseInterface){
+            $body = $response->getBody();
+        }
+
+        return json_decode((string) $body);
+    }
+
+    /**
+     * List Drives
+     * @return Object
+     */
+    public function listDrives(){
+        $uri = $this->getBasePath() . urlencode("/drives");
+
+        $response = $this->makeRequest("GET", $uri);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
      * Get Drive MetaData
      * @param  null|string $drive_id ID of the Drive to fetch. Null for Default Drive.
      * @return Object
@@ -159,7 +187,7 @@ class Client
         $uri = $this->getBasePath() . urlencode($path);
 
         $response = $this->makeRequest("GET", $uri);
-        $responseContent = json_decode((string) $response->getBody());
+        $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
     }
