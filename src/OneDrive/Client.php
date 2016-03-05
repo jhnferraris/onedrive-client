@@ -403,4 +403,25 @@ class Client
         return $responseContent;
     }
 
+    /**
+     * Get Thumbnails an Item
+     * @param  string  $item_id      ID of the Item
+     * @param  array   $params       Additional Query Params
+     * @return Object
+     */
+    public function getItemThumbnails($item_id, $params = array())
+    {
+        if($item_id == ""){
+            echo "A valid Item ID is required!";
+            return false;
+        }
+        $path = $this->getDrivePath() . "/items/{$item_id}/thumbnails";
+        $uri = $this->buildUrl($path);
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
 }
