@@ -404,7 +404,7 @@ class Client
     }
 
     /**
-     * Get Thumbnails an Item
+     * Get Thumbnails of an Item
      * @param  string  $item_id      ID of the Item
      * @param  array   $params       Additional Query Params
      * @return Object
@@ -416,6 +416,28 @@ class Client
             return false;
         }
         $path = $this->getDrivePath() . "/items/{$item_id}/thumbnails";
+        $uri = $this->buildUrl($path);
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
+     * Get a Single Thumbnail of an Item
+     * @param  string  $item_id      ID of the Item
+     * @param  string  $thumbnail_id ID of the thumbnail
+     * @param  array   $params       Additional Query Params
+     * @return Object
+     */
+    public function getItemThumbnail($item_id, $thumbnail_id = "0", $params = array())
+    {
+        if($item_id == "" || $thumbnail_id == ""){
+            echo "A valid Item ID and Thumbnail ID are required!";
+            return false;
+        }
+        $path = $this->getDrivePath() . "/items/{$item_id}/thumbnails/{$thumbnail_id}";
         $uri = $this->buildUrl($path);
 
         $response = $this->makeRequest("GET", $uri, ["query" => $params]);
