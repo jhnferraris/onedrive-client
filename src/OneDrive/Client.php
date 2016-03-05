@@ -32,6 +32,12 @@ class Client
      */
     private $responseType = "application/json";
 
+    /**
+     * Default options to send along a Request
+     * @var array
+     */
+    private $defaultOptions = [];
+
 
     /**
      * The Constructor
@@ -65,6 +71,7 @@ class Client
     /**
      * Set the Access Token
      * @param string $access_token Access Token
+     * @return array \Kunnu\OneDrive\Client
      */
     public function setAccessToken($access_token){
         $this->access_token = $access_token;
@@ -74,6 +81,7 @@ class Client
     /**
      * Set the Response Type
      * @param string $type 'application/json', 'application/xml'
+     * @return array \Kunnu\OneDrive\Client
      */
     public function setResponseType($type){
         $this->responseType = $type;
@@ -85,7 +93,25 @@ class Client
      * @return string Response Type
      */
     public function getResponseType(){
-        return $this->responseType;
+        return $this->defaultOptions;
+    }
+
+    /**
+     * Set the Default Options
+     * @param array \Kunnu\OneDrive\Client
+     * @return array \Kunnu\OneDrive\Client
+     */
+    public function setDefaultOptions($type){
+        $this->defaultOptions = $type;
+        return $this;
+    }
+
+    /**
+     * Get the Default Options
+     * @return string The Default Options
+     */
+    public function getDefaultOptions(){
+        return $this->defaultOptions;
     }
 
     /**
@@ -137,23 +163,36 @@ class Client
     }
 
     /**
+     * Build Options
+     * @param  array $options Additional Options
+     * @return array          Merged Additional Options
+     */
+    protected function buildOptions($options){
+        return array_merge($options, $this->getDefaultOptions());
+    }
+
+    /**
      * Make Request to the API using Guzzle
      * @param  string $method  Method Type [GET|POST|PUT|DELETE]
      * @param  null|string|UriInterface $uri    URI for the Request
+     * @param array $params Options to send along the request
      * @param  string|resource|StreamInterface $body    Message Body
      * @param  array  $headers Headers for the message
      * @return \Psr\Http\Message\ResponseInterface
      */
-    protected function makeRequest($method, $uri, $body = null, $headers = []){
+    protected function makeRequest($method, $uri, $options = [], $body = null, $headers = []){
         //Build headers
         $headers = $this->buildHeaders($headers);
 
         //Create a new Request Object
         $request = new Request($method, $uri, $headers, $body);
 
+        //Build Options
+        $options = $this->buildOptions($options);
+
         try{
             //Send the Request
-            return $this->guzzle->send($request);
+            return $this->guzzle->send($request, $options);
         }catch(\Exception $e){
             echo $e->getMessage();
             exit();
@@ -176,12 +215,13 @@ class Client
 
     /**
      * List Drives
+     * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function listDrives(){
+    public function listDrives($params = array()){
         $uri = $this->buildUrl("/drives");
 
-        $response = $this->makeRequest("GET", $uri);
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
@@ -190,13 +230,14 @@ class Client
     /**
      * Get Drive MetaData
      * @param  null|string $drive_id ID of the Drive to fetch. Null for Default Drive.
+     * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDrive($drive_id = null){
+    public function getDrive($drive_id = null, $params = array()){
         $path = is_null($drive_id) ? "/drive" : "/drives/{$drive_id}";
         $uri = $this->buildUrl($path);
 
-        $response = $this->makeRequest("GET", $uri);
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
@@ -204,10 +245,11 @@ class Client
 
     /**
      * Get the Default Drive
+     * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDefaultDrive(){
-        return $this->getDrive();
+    public function getDefaultDrive($params = array()){
+        return $this->getDrive(null, $params);
     }
 
 }
