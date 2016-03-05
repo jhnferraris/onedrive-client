@@ -63,7 +63,8 @@ class Client
      * Get the API Base Path
      * @return string API Base Path
      */
-    public function getBasePath(){
+    public function getBasePath()
+    {
         return self::BASE_PATH;
     }
 
@@ -71,7 +72,8 @@ class Client
      * Get the Access Token
      * @return string Access Token
      */
-    public function getAccessToken(){
+    public function getAccessToken()
+    {
         return $this->access_token;
     }
 
@@ -80,7 +82,8 @@ class Client
      * @param string $access_token Access Token
      * @return array \Kunnu\OneDrive\Client
      */
-    public function setAccessToken($access_token){
+    public function setAccessToken($access_token)
+    {
         $this->access_token = $access_token;
         return $this;
     }
@@ -90,7 +93,8 @@ class Client
      * @param string $type 'application/json', 'application/xml'
      * @return array \Kunnu\OneDrive\Client
      */
-    public function setResponseType($type){
+    public function setResponseType($type)
+    {
         $this->responseType = $type;
         return $this;
     }
@@ -99,7 +103,8 @@ class Client
      * Get the Response Type
      * @return string Response Type
      */
-    public function getResponseType(){
+    public function getResponseType()
+    {
         return $this->defaultOptions;
     }
 
@@ -108,7 +113,8 @@ class Client
      * @param array \Kunnu\OneDrive\Client
      * @return array \Kunnu\OneDrive\Client
      */
-    public function setDefaultOptions($type){
+    public function setDefaultOptions($type)
+    {
         $this->defaultOptions = $type;
         return $this;
     }
@@ -117,7 +123,8 @@ class Client
      * Get the Default Options
      * @return string The Default Options
      */
-    public function getDefaultOptions(){
+    public function getDefaultOptions()
+    {
         return $this->defaultOptions;
     }
 
@@ -125,7 +132,8 @@ class Client
      * Get the Authorization Header with the Access Token
      * @return array Authorization Header
      */
-    protected function getAuthHeader(){
+    protected function getAuthHeader()
+    {
         return ['Authorization' => "bearer " . $this->getAccessToken()];
     }
 
@@ -133,7 +141,8 @@ class Client
      * Get the Response Type Header
      * @return array Response Type Header
      */
-    public function getResponseTypeHeader(){
+    public function getResponseTypeHeader()
+    {
         return ['Content-Type' => $this->getResponseType()];
     }
 
@@ -141,7 +150,8 @@ class Client
      * Get Default Headers
      * @return array Default Headers
      */
-    protected function getDefaultHeaders(){
+    protected function getDefaultHeaders()
+    {
         return array_merge($this->getAuthHeader(), $this->getResponseTypeHeader());
     }
 
@@ -150,9 +160,10 @@ class Client
      * @param  array  $headers Additional Headers
      * @return array          Merged additonal and default headers
      */
-    protected function buildHeaders($headers = []){
+    protected function buildHeaders($headers = [])
+    {
         //Override the Default Response Type, if provided
-        if(array_key_exists("Content-Type", $headers)){
+        if (array_key_exists("Content-Type", $headers)) {
             $this->setResponseType($headers['Content-Type']);
         }
 
@@ -164,7 +175,8 @@ class Client
      * @param  string $path Relative API path or endpoint
      * @return string       The Full URL
      */
-    protected function buildUrl($path = ""){
+    protected function buildUrl($path = "")
+    {
         $path = urlencode($path);
         return $this->getBasePath() . $path;
     }
@@ -174,7 +186,8 @@ class Client
      * @param  array $options Additional Options
      * @return array          Merged Additional Options
      */
-    protected function buildOptions($options){
+    protected function buildOptions($options)
+    {
         return array_merge($options, $this->getDefaultOptions());
     }
 
@@ -187,7 +200,8 @@ class Client
      * @param  array  $headers Headers for the message
      * @return \Psr\Http\Message\ResponseInterface
      */
-    protected function makeRequest($method, $uri, $options = [], $body = null, $headers = []){
+    protected function makeRequest($method, $uri, $options = [], $body = null, $headers = [])
+    {
         //Build headers
         $headers = $this->buildHeaders($headers);
 
@@ -197,10 +211,10 @@ class Client
         //Build Options
         $options = $this->buildOptions($options);
 
-        try{
+        try {
             //Send the Request
             return $this->guzzle->send($request, $options);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             echo $e->getMessage();
             exit();
         }
@@ -211,9 +225,10 @@ class Client
      * @param  string|\Psr\Http\Message\ResponseInterface $response Response object or string to decode
      * @return string
      */
-    protected function decodeResponse($response){
+    protected function decodeResponse($response)
+    {
         $body = $response;
-        if($response instanceof ResponseInterface){
+        if ($response instanceof ResponseInterface) {
             $body = $response->getBody();
         }
 
@@ -225,7 +240,8 @@ class Client
      * @param  string $drive_id ID of the Drive
      * @return string           Drive Path
      */
-    public function getDrivePath($drive_id = null){
+    public function getDrivePath($drive_id = null)
+    {
         $drive_id = is_null($drive_id) ? $this->getSelectedDrive() : $drive_id;
         return "/drives/{$drive_id}";
     }
@@ -235,8 +251,9 @@ class Client
      * @param  string $drive Drive ID
      * @return \Kunnu\OneDrive\Client
      */
-    public function selectDrive($drive_id){
-        if(!empty($drive_id)){
+    public function selectDrive($drive_id)
+    {
+        if (!empty($drive_id)) {
             $this->selectedDrive = $drive_id;
         }
         return $this;
@@ -246,7 +263,8 @@ class Client
      * Get the Seleted Drive
      * @return string Selected Drive ID
      */
-    public function getSelectedDrive(){
+    public function getSelectedDrive()
+    {
         return $this->selectedDrive;
     }
 
@@ -255,7 +273,8 @@ class Client
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function listDrives($params = array()){
+    public function listDrives($params = array())
+    {
         $uri = $this->buildUrl("/drives");
 
         $response = $this->makeRequest("GET", $uri, ["query" => $params]);
@@ -270,7 +289,8 @@ class Client
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDrive($drive_id = null, $params = array()){
+    public function getDrive($drive_id = null, $params = array())
+    {
         $path = $this->getDrivePath($drive_id);
         $uri = $this->buildUrl($path);
 
@@ -285,7 +305,8 @@ class Client
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDefaultDrive($params = array()){
+    public function getDefaultDrive($params = array())
+    {
         return $this->getDrive(null, $params);
     }
 
@@ -295,7 +316,8 @@ class Client
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDriveRoot($drive_id = null, $params = array()){
+    public function getDriveRoot($drive_id = null, $params = array())
+    {
         $path = $this->getDrivePath($drive_id);
         $path = "{$path}/root";
         $uri = $this->buildUrl($path);
@@ -312,7 +334,8 @@ class Client
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function listChildren($item_id = null, $params = array()){
+    public function listChildren($item_id = null, $params = array())
+    {
         $path = is_null($item_id) ? "/root" : "/items/{$item_id}";
         $path = $this->getDrivePath() . "{$path}/children";
         $uri = $this->buildUrl($path);
