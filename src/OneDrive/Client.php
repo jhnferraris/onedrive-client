@@ -306,4 +306,21 @@ class Client
         return $responseContent;
     }
 
+    /**
+     * List Children of the specified Item ID
+     * @param  null|string $item_id ID of the Item to list children of.
+     * @param array $params Additional Query Parameters
+     * @return Object
+     */
+    public function listChildren($item_id = null, $params = array()){
+        $path = is_null($item_id) ? "/root" : "/items/{$item_id}";
+        $path = $this->getDrivePath() . "{$path}/children";
+        $uri = $this->buildUrl($path);
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
 }
