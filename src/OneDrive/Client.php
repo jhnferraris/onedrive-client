@@ -346,4 +346,40 @@ class Client
         return $responseContent;
     }
 
+    /**
+     * Get an Item by ID
+     * @param  string  $item_id      ID of the Item
+     * @param  boolean $withChildren Get the Item along with it's children
+     * @param  array   $params       Additional Query Params
+     * @return Object
+     */
+    public function getItem($item_id, $withChildren = false, $params = array())
+    {
+        if($item_id == ""){
+            echo "A valid Item ID is required!";
+            return false;
+        }
+        $path = $this->getDrivePath() . "/items/{$item_id}";
+        $uri = $this->buildUrl($path);
+
+        if($withChildren){
+            //User has passed an expand param
+            if(array_key_exists('expand', $params)) {
+                //Expand doesn't contain children param
+                if ((!strpos($params['expand'], "children"))){
+                    //Append children param into expand
+                    $params['expand'] = "{$params['expand']},children";
+                }
+            }else{
+                //No expand param given
+                $params['expand'] = "children";
+            }
+        }
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
 }
