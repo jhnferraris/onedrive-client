@@ -229,12 +229,12 @@ class Client
 
     /**
      * Get Drive MetaData
-     * @param  null|string $drive_id ID of the Drive to fetch. Null for Default Drive.
+     * @param  null|string $item_id ID of the Drive to fetch. Null for Default Drive.
      * @param array $params Additional Query Parameters
      * @return Object
      */
-    public function getDrive($drive_id = null, $params = array()){
-        $path = is_null($drive_id) ? "/drive" : "/drives/{$drive_id}";
+    public function getDrive($item_id = null, $params = array()){
+        $path = is_null($item_id) ? "/drive" : "/drives/{$item_id}";
         $uri = $this->buildUrl($path);
 
         $response = $this->makeRequest("GET", $uri, ["query" => $params]);
@@ -250,6 +250,22 @@ class Client
      */
     public function getDefaultDrive($params = array()){
         return $this->getDrive(null, $params);
+    }
+
+    /**
+     * Get Drive Root
+     * @param  null|string $item_id ID of the Drive to fetch. Null for Default Drive.
+     * @param array $params Additional Query Parameters
+     * @return Object
+     */
+    public function getDriveRoot($item_id = null, $params = array()){
+        $path = is_null($item_id) ? "/drive/root" : "/drives/{$item_id}/root";
+        $uri = $this->buildUrl($path);
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
     }
 
 }
