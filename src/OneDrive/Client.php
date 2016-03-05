@@ -382,4 +382,25 @@ class Client
         return $responseContent;
     }
 
+    /**
+     * Search
+     * @param string Search Query
+     * @param  null|string $item_id ID of the Item(Folder) to search inside of.
+     * @param array $params Additional Query Parameters
+     * @return Object
+     */
+    public function search($query, $item_id = null, $params = array())
+    {
+        $path = is_null($item_id) ? "/root" : "/items/{$item_id}";
+        $path = $this->getDrivePath() . "{$path}/view.search";
+        $uri = $this->buildUrl($path);
+
+        $params['q'] = stripslashes(trim($query));
+
+        $response = $this->makeRequest("GET", $uri, ["query" => $params]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
 }
