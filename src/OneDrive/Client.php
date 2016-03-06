@@ -457,10 +457,26 @@ class Client
         $item = $this->getItem($item_id);
         $downloadUrl = $item->{'@content.downloadUrl'};
 
-        $context = stream_context_create(array('http' => array('header'=>'Connection: close\r\n')));
-        $output = file_get_contents($downloadUrl, false, $context);
+        $file = fopen($downloadUrl, 'r');
+        $stream = new Stream($file);
 
-        return $output;
+        $downloadedFile = fopen('php://temp', 'w+');
+
+        if ($downloadedFile === false) {
+            throw new \Exception('Error when saving the downloaded file');
+        }
+
+        while (!$stream->eof()) {
+            $writeResult = fwrite($downloadedFile, $stream->read(8000));
+            if ($writeResult === false) {
+                throw new \Exception('Error when saving the downloaded file');
+            }
+        }
+
+        $stream->close();
+        rewind($downloadedFile);
+
+        return $downloadedFile;
     }
 
 }
