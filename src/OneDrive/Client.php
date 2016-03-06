@@ -1,6 +1,7 @@
 <?php
 namespace Kunnu\OneDrive;
 
+use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Client as Guzzle;
 use Psr\Http\Message\ResponseInterface;
@@ -444,6 +445,22 @@ class Client
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
+    }
+
+    /**
+     * Download an Item
+     * @param  string $item_id ID of the Item to download
+     * @param  array  $params  Additional Query Params
+     * @return string          Downloaded content
+     */
+    public function downloadItem($item_id, $params = array()){
+        $item = $this->getItem($item_id);
+        $downloadUrl = $item->{'@content.downloadUrl'};
+
+        $context = stream_context_create(array('http' => array('header'=>'Connection: close\r\n')));
+        $output = file_get_contents($downloadUrl, false, $context);
+
+        return $output;
     }
 
 }
