@@ -31,7 +31,7 @@ class Client
      * Response Type for API Response
      * @var string
      */
-    private $responseType = "application/json";
+    private $contentType = "application/json";
 
     /**
      * Default options to send along a Request
@@ -45,6 +45,12 @@ class Client
      * @var default
      */
     private $selectedDrive = "me";
+
+    /**
+     * Available Conflict Behaviours
+     * @var array
+     */
+    private $defaultconflictBehaviors = ["rename", "fail", "replace"];
 
 
     /**
@@ -70,6 +76,26 @@ class Client
     }
 
     /**
+     * Set the Default Options
+     * @param array \Kunnu\OneDrive\Client
+     * @return array \Kunnu\OneDrive\Client
+     */
+    public function setDefaultOptions(array $options = array())
+    {
+        $this->defaultOptions = $options;
+        return $this;
+    }
+
+    /**
+     * Get the Default Options
+     * @return string The Default Options
+     */
+    public function getDefaultOptions()
+    {
+        return $this->defaultOptions;
+    }
+
+    /**
      * Get the Access Token
      * @return string Access Token
      */
@@ -90,43 +116,23 @@ class Client
     }
 
     /**
-     * Set the Response Type
+     * Set the Content Type
      * @param string $type 'application/json', 'application/xml'
      * @return array \Kunnu\OneDrive\Client
      */
-    public function setResponseType($type)
+    public function setContentType($type)
     {
-        $this->responseType = $type;
+        $this->contentType = $type;
         return $this;
     }
 
     /**
-     * Get the Response Type
-     * @return string Response Type
+     * Get the Content Type
+     * @return string Content Type
      */
-    public function getResponseType()
+    public function getContentType()
     {
-        return $this->defaultOptions;
-    }
-
-    /**
-     * Set the Default Options
-     * @param array \Kunnu\OneDrive\Client
-     * @return array \Kunnu\OneDrive\Client
-     */
-    public function setDefaultOptions($type)
-    {
-        $this->defaultOptions = $type;
-        return $this;
-    }
-
-    /**
-     * Get the Default Options
-     * @return string The Default Options
-     */
-    public function getDefaultOptions()
-    {
-        return $this->defaultOptions;
+        return $this->contentType;
     }
 
     /**
@@ -139,12 +145,12 @@ class Client
     }
 
     /**
-     * Get the Response Type Header
-     * @return array Response Type Header
+     * Get the Content Type Header
+     * @return array Content Type Header
      */
-    public function getResponseTypeHeader()
+    public function getContentTypeHeader()
     {
-        return ['Content-Type' => $this->getResponseType()];
+        return ['Content-Type' => $this->getContentType()];
     }
 
     /**
@@ -153,7 +159,7 @@ class Client
      */
     protected function getDefaultHeaders()
     {
-        return array_merge($this->getAuthHeader(), $this->getResponseTypeHeader());
+        return array_merge($this->getAuthHeader(), $this->getContentTypeHeader());
     }
 
     /**
@@ -165,7 +171,7 @@ class Client
     {
         //Override the Default Response Type, if provided
         if (array_key_exists("Content-Type", $headers)) {
-            $this->setResponseType($headers['Content-Type']);
+            $this->setContentType($headers['Content-Type']);
         }
 
         return array_merge($headers, $this->getDefaultHeaders());
@@ -356,16 +362,16 @@ class Client
      */
     public function getItem($item_id, $withChildren = false, $params = array())
     {
-        if($item_id == ""){
+        if ($item_id == "") {
             echo "A valid Item ID is required!";
             return false;
         }
         $path = $this->getDrivePath() . "/items/{$item_id}";
         $uri = $this->buildUrl($path);
 
-        if($withChildren){
+        if ($withChildren) {
             //User has passed an expand param
-            if(array_key_exists('expand', $params)) {
+            if (array_key_exists('expand', $params))  {
                 //Expand doesn't contain children param
                 if ((!strpos($params['expand'], "children"))){
                     //Append children param into expand
@@ -412,7 +418,7 @@ class Client
      */
     public function getItemThumbnails($item_id, $params = array())
     {
-        if($item_id == ""){
+        if ($item_id == "") {
             echo "A valid Item ID is required!";
             return false;
         }
@@ -434,7 +440,7 @@ class Client
      */
     public function getItemThumbnail($item_id, $thumbnail_id = "0", $params = array())
     {
-        if($item_id == "" || $thumbnail_id == ""){
+        if ($item_id == "" || $thumbnail_id == "") {
             echo "A valid Item ID and Thumbnail ID are required!";
             return false;
         }
@@ -453,7 +459,8 @@ class Client
      * @param  array  $params  Additional Query Params
      * @return string          Downloaded content
      */
-    public function downloadItem($item_id, $params = array()){
+    public function downloadItem($item_id, $params = array())
+    {
         $item = $this->getItem($item_id);
         $downloadUrl = $item->{'@content.downloadUrl'};
 
@@ -477,6 +484,63 @@ class Client
         rewind($downloadedFile);
 
         return $downloadedFile;
+    }
+
+    /**
+     * Validate whether a given behavior is a valid Conflict Behavior
+     * @param  string $conflictBehavior Behavior to validate
+     * @return bool
+     */
+    protected function validateConflictBehavior($conflictBehavior)
+    {
+        $exists = in_array($conflictBehavior, $this->defaultconflictBehaviors);
+
+        if (!$exists) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Create a Folder Item
+     * @param  string  $title            Name of the Folder
+     * @param  string  $parent_id        ID of the Parent Folder. Empty for drive root.
+     * @param  string  $behavior         Conflict Behavior
+     * @param  array   $params           Additional Query Parameters
+     * @return string                    Created Folder Item
+     */
+    public function createFolder($title, $parent_id = null, $behavior = "rename", $params = array())
+    {
+
+        //Drive Path
+        $path = $this->getDrivePath();
+
+        //If the parent id is not provided, use the drive root
+        if (is_null($parent_id)) {
+            $path .= "/root/children";
+        } else {
+            $path .= "/items/{$parent_id}/children";
+        }
+
+        $uri = $this->buildUrl($path);
+
+        //Validate Conflict Behavior
+        if (!$this->validateConflictBehavior($behavior)) {
+            echo "Please enter a valid conflict behavior";
+            exit();
+        }
+
+        $body = ["name" => $title, "@name.conflictBehavior" => $behavior, "folder" => new \StdClass()];
+
+        //Json Encode Body
+        $body = json_encode($body);
+
+        $response = $this->makeRequest("POST", $uri, ["query" => $params, 'body' => $body]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
     }
 
 }
