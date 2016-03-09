@@ -65,7 +65,7 @@ class Client
      *
      * @var string
      */
-    private $defaultBehavior = 'rename';
+    private $defaultBehavior = 'fail';
 
     /**
      * The Constructor.
