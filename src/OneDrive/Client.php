@@ -762,15 +762,17 @@ class Client
     }
 
     /**
-     * Update Metadata of an Item
-     * @param  string $item_id  ID of the item
-     * @param  array  $metadata Metadata to update
-     * @return Object           Updated Item
+     * Update Metadata of an Item.
+     *
+     * @param string $item_id  ID of the item
+     * @param array  $metadata Metadata to update
+     *
+     * @return object Updated Item
      */
     public function updateMeta($item_id, array $metadata)
     {
         //Drive Path
-        $path = $this->getDrivePath() . "/items/{$item_id}";
+        $path = $this->getDrivePath()."/items/{$item_id}";
 
         $uri = $this->buildUrl($path);
 
@@ -784,19 +786,21 @@ class Client
     }
 
     /**
-     * Move an Item to a new Location
-     * @param  string $item_id  ID of the item
-     * @param  array  $parent_id ID of the parent folder to move the item to
-     * @return Object           Updated Item
+     * Move an Item to a new Location.
+     *
+     * @param string $item_id   ID of the item
+     * @param array  $parent_id ID of the parent folder to move the item to
+     *
+     * @return object Updated Item
      */
     public function move($item_id, $parent_id)
     {
         //Drive Path
-        $path = $this->getDrivePath() . "/items/{$item_id}";
+        $path = $this->getDrivePath()."/items/{$item_id}";
 
         $uri = $this->buildUrl($path);
 
-        $metadata = array("parentReference" => array("id" => $parent_id));
+        $metadata = array('parentReference' => array('id' => $parent_id));
 
         //Json Encode Body
         $body = json_encode($metadata);
@@ -808,22 +812,24 @@ class Client
     }
 
     /**
-     * Move an Item to a new Location
-     * @param  string $item_id  ID of the item
-     * @param  array  $parent_id ID of the parent folder to copy the item to
-     * @param string  $name The new name for the copy. If not provided, the original name will be used.
-     * @return Object           Copied Item
+     * Move an Item to a new Location.
+     *
+     * @param string $item_id   ID of the item
+     * @param array  $parent_id ID of the parent folder to copy the item to
+     * @param string $name      The new name for the copy. If not provided, the original name will be used.
+     *
+     * @return object Copied Item
      */
     public function copy($item_id, $parent_id, $name = null)
     {
         //Drive Path
-        $path = $this->getDrivePath() . "/items/{$item_id}/action.copy";
+        $path = $this->getDrivePath()."/items/{$item_id}/action.copy";
 
         $uri = $this->buildUrl($path);
 
-        $metadata = array("parentReference" => array("id" => $parent_id));
+        $metadata = array('parentReference' => array('id' => $parent_id));
 
-        if(!is_null($name)){
+        if (!is_null($name)) {
             $metadata['name'] = $name;
         }
 
@@ -837,38 +843,42 @@ class Client
     }
 
     /**
-     * Delete an Item
-     * @param  string $item_id  ID of the item
-     * @return string|bool      If deleted, ID of the item is returned, else false
+     * Delete an Item.
+     *
+     * @param string $item_id ID of the item
+     *
+     * @return string|bool If deleted, ID of the item is returned, else false
      */
     public function delete($item_id)
     {
         //Drive Path
-        $path = $this->getDrivePath() . "/items/{$item_id}";
+        $path = $this->getDrivePath()."/items/{$item_id}";
 
         $uri = $this->buildUrl($path);
 
         $response = $this->makeRequest('DELETE', $uri);
-        $response = array("id" => $item_id);
+        $response = array('id' => $item_id);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
     }
 
     /**
-     * Create Sharing Link
-     * @param  string $item_id ID of the Item
-     * @param  string $type    The type of link to create: view|edit
-     * @return Object          Created Link
+     * Create Sharing Link.
+     *
+     * @param string $item_id ID of the Item
+     * @param string $type    The type of link to create: view|edit
+     *
+     * @return object Created Link
      */
-    public function createShareLink($item_id, $type = "view")
+    public function createShareLink($item_id, $type = 'view')
     {
         //Drive Path
-        $path = $this->getDrivePath() . "/items/{$item_id}/action.createLink";
+        $path = $this->getDrivePath()."/items/{$item_id}/action.createLink";
 
         $uri = $this->buildUrl($path);
 
-        $body = json_encode(array("type" => $type));
+        $body = json_encode(array('type' => $type));
 
         $response = $this->makeRequest('POST', $uri, [], $body);
 
