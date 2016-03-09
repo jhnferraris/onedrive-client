@@ -313,7 +313,7 @@ class Client
      *
      * @return string Drive Path
      */
-    public function getDrivePath($drive_id = null)
+    protected function getDrivePath($drive_id = null)
     {
         $drive_id = is_null($drive_id) ? $this->getSelectedDrive() : $drive_id;
 
@@ -341,7 +341,7 @@ class Client
      *
      * @return string Selected Drive ID
      */
-    public function getSelectedDrive()
+    protected function getSelectedDrive()
     {
         return $this->selectedDrive;
     }
