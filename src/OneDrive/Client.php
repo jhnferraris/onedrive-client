@@ -767,11 +767,36 @@ class Client
      * @param  array  $metadata Metadata to update
      * @return Object           Updated Item
      */
-    public function updateMeta($item_id, array $metadata){
+    public function updateMeta($item_id, array $metadata)
+    {
         //Drive Path
         $path = $this->getDrivePath() . "/items/{$item_id}";
 
         $uri = $this->buildUrl($path);
+
+        //Json Encode Body
+        $body = json_encode($metadata);
+
+        $response = $this->makeRequest('PATCH', $uri, ['body' => $body]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
+     * Move an Item to a new Location
+     * @param  string $item_id  ID of the item
+     * @param  array  $parent_id ID of the parent folder to move the item to
+     * @return Object           Updated Item
+     */
+    public function move($item_id, $parent_id)
+    {
+        //Drive Path
+        $path = $this->getDrivePath() . "/items/{$item_id}";
+
+        $uri = $this->buildUrl($path);
+
+        $metadata = array("parentReference" => array("id" => $parent_id));
 
         //Json Encode Body
         $body = json_encode($metadata);
