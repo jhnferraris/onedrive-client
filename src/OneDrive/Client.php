@@ -777,7 +777,7 @@ class Client
         //Json Encode Body
         $body = json_encode($metadata);
 
-        $response = $this->makeRequest('PATCH', $uri, ['body' => $body]);
+        $response = $this->makeRequest('PATCH', $uri, [], $body);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
@@ -801,7 +801,36 @@ class Client
         //Json Encode Body
         $body = json_encode($metadata);
 
-        $response = $this->makeRequest('PATCH', $uri, ['body' => $body]);
+        $response = $this->makeRequest('PATCH', $uri, [], $body);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
+     * Move an Item to a new Location
+     * @param  string $item_id  ID of the item
+     * @param  array  $parent_id ID of the parent folder to copy the item to
+     * @param string  $name The new name for the copy. If not provided, the original name will be used.
+     * @return Object           Copied Item
+     */
+    public function copy($item_id, $parent_id, $name = null)
+    {
+        //Drive Path
+        $path = $this->getDrivePath() . "/items/{$item_id}/action.copy";
+
+        $uri = $this->buildUrl($path);
+
+        $metadata = array("parentReference" => array("id" => $parent_id));
+
+        if(!is_null($name)){
+            $metadata['name'] = $name;
+        }
+
+        //Json Encode Body
+        $body = json_encode($metadata);
+
+        $response = $this->makeRequest('POST', $uri, [], $body, ['Prefer' => 'respond-async']);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
