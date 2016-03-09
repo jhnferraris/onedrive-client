@@ -854,4 +854,26 @@ class Client
 
         return $responseContent;
     }
+
+    /**
+     * Create Sharing Link
+     * @param  string $item_id ID of the Item
+     * @param  string $type    The type of link to create: view|edit
+     * @return Object          Created Link
+     */
+    public function createShareLink($item_id, $type = "view")
+    {
+        //Drive Path
+        $path = $this->getDrivePath() . "/items/{$item_id}/action.createLink";
+
+        $uri = $this->buildUrl($path);
+
+        $body = json_encode(array("type" => $type));
+
+        $response = $this->makeRequest('POST', $uri, [], $body);
+
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
 }
