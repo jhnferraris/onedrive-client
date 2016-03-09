@@ -767,6 +767,44 @@ class Client
     }
 
     /**
+     * Create file.
+     *
+     * @param string $title     File Name
+     * @param string $contents  File Contents
+     * @param string $parent_id ID of the Parent Folder. Empty for drive root.
+     * @param string $behavior  Conflict Behavior
+     *
+     * @return object Created File Item
+     */
+    public function createFile($title, $contents, $parent_id = null, $behavior = null)
+    {
+        $behavior = is_null($behavior) ? $this->getDefaultBehavior() : $behavior;
+
+        //Drive Path
+        $path = $this->getDrivePath();
+
+        //If the parent id is not provided, use the drive root
+        if (is_null($parent_id)) {
+            $path .= "/root/children/{$title}/content";
+        } else {
+            $path .= "/items/{$parent_id}/children/{$title}/content";
+        }
+
+        $uri = $this->buildUrl($path);
+
+        //Validate Conflict Behavior
+        if (!$this->validateConflictBehavior($behavior)) {
+            echo 'Please enter a valid conflict behavior';
+            exit();
+        }
+
+        $response = $this->makeRequest('PUT', $uri, [], $contents);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
      * Update Metadata of an Item.
      *
      * @param string $item_id  ID of the item
