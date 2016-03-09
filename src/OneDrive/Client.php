@@ -835,4 +835,23 @@ class Client
 
         return $responseContent;
     }
+
+    /**
+     * Delete an Item
+     * @param  string $item_id  ID of the item
+     * @return string|bool      If deleted, ID of the item is returned, else false
+     */
+    public function delete($item_id)
+    {
+        //Drive Path
+        $path = $this->getDrivePath() . "/items/{$item_id}";
+
+        $uri = $this->buildUrl($path);
+
+        $response = $this->makeRequest('DELETE', $uri);
+        $response = array("id" => $item_id);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
 }
