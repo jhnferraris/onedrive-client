@@ -14,6 +14,11 @@ class Client
     const BASE_PATH = 'https://api.onedrive.com/v1.0';
 
     /**
+     * OneDrive Default Drive
+     */
+    const DEFAULT_DRIVE = "me";
+
+    /**
      * The Guzzle Client.
      *
      * @var GuzzleHttp\Client
@@ -46,7 +51,7 @@ class Client
      *
      * @var default
      */
-    private $selectedDrive = 'me';
+    private $selectedDrive = self::DEFAULT_DRIVE;
 
     /**
      * Available Conflict Behaviours.
@@ -386,7 +391,7 @@ class Client
      */
     public function getDefaultDrive($params = array())
     {
-        return $this->getDrive(null, $params);
+        return $this->getDrive(self::DEFAULT_DRIVE, $params);
     }
 
     /**
