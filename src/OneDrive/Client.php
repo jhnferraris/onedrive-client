@@ -749,10 +749,14 @@ class Client
         $mimeType = mime_content_type($file);
 
         $body = $this->createMultipartBody($metadata, $content, $mimeType);
+
+        $defaultContentType = $this->getContentType();
         $this->setContentType("multipart/related; boundary={$this->boundary}");
 
         $response = $this->makeRequest('POST', $uri, [], $body);
         $responseContent = $this->decodeResponse($response);
+
+        $this->setContentType($defaultContentType);
 
         return $responseContent;
     }
