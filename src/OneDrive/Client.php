@@ -708,7 +708,7 @@ class Client
      *
      * @return object Created File Item
      */
-    public function uploadFile($file, $title = null, $parent_id = null, $behavior = 'replace')
+    public function uploadFile($file, $title = null, $parent_id = null, $behavior = null)
     {
         if (!file_exists($file)) {
             echo "File Doesn't exist!";
@@ -757,6 +757,27 @@ class Client
         $responseContent = $this->decodeResponse($response);
 
         $this->setContentType($defaultContentType);
+
+        return $responseContent;
+    }
+
+    /**
+     * Update Metadata of an Item
+     * @param  string $item_id  ID of the item
+     * @param  array  $metadata Metadata to update
+     * @return Object           Updated Item
+     */
+    public function updateMeta($item_id, array $metadata){
+        //Drive Path
+        $path = $this->getDrivePath() . "/items/{$item_id}";
+
+        $uri = $this->buildUrl($path);
+
+        //Json Encode Body
+        $body = json_encode($metadata);
+
+        $response = $this->makeRequest('PATCH', $uri, ['body' => $body]);
+        $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
     }
