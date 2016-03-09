@@ -50,7 +50,13 @@ class Client
      * Available Conflict Behaviours
      * @var array
      */
-    private $defaultconflictBehaviors = ["rename", "fail", "replace"];
+    private $allowedBehaviors = ["rename", "fail", "replace"];
+
+    /**
+     * Default COnflict Behaviour
+     * @var string
+     */
+    private $defaultBehavior = "rename";
 
 
     /**
@@ -160,6 +166,26 @@ class Client
     protected function getDefaultHeaders()
     {
         return array_merge($this->getAuthHeader(), $this->getContentTypeHeader());
+    }
+
+    /**
+     * Set the Default Conflict Behavior
+     * @param string $behavior
+     */
+    public function setDefaultBehavior($behavior)
+    {
+        $this->defaultBehavior = $behavior;
+
+        return $this;
+    }
+
+    /**
+     * Get the Default Behavior
+     * @return string Default Behavior
+     */
+    public function getDefaultBehavior()
+    {
+        return $this->defaultBehavior;
     }
 
     /**
@@ -373,7 +399,7 @@ class Client
             //User has passed an expand param
             if (array_key_exists('expand', $params))  {
                 //Expand doesn't contain children param
-                if ((!strpos($params['expand'], "children"))){
+                if ((!strpos($params['expand'], "children"))) {
                     //Append children param into expand
                     $params['expand'] = "{$params['expand']},children";
                 }
@@ -454,17 +480,16 @@ class Client
     }
 
     /**
-     * Download an Item
-     * @param  string $item_id ID of the Item to download
-     * @param  array  $params  Additional Query Params
-     * @return string          Downloaded content
+     * Download a given File
+     * @param  mixed $file File Location or Resource
+     * @return Resource
      */
-    public function downloadItem($item_id, $params = array())
+    protected function downloadFile($file)
     {
-        $item = $this->getItem($item_id);
-        $downloadUrl = $item->{'@content.downloadUrl'};
+        if (!is_resource($file)) {
+            $file = fopen($file, 'r');
+        }
 
-        $file = fopen($downloadUrl, 'r');
         $stream = new Stream($file);
 
         $downloadedFile = fopen('php://temp', 'w+');
@@ -487,13 +512,44 @@ class Client
     }
 
     /**
+     * Get a File's Content
+     * @param  mixed $file File Location or Resource
+     * @return string       File Contents
+     */
+    protected function getFileContents($file)
+    {
+        if (!is_resource($file)) {
+            $file = fopen($file, 'r');
+        }
+        $stream = new Stream($file);
+        $output = $stream->getContents();
+        $stream->close();
+        return $output;
+    }
+
+    /**
+     * Download an Item
+     * @param  string $item_id ID of the Item to download
+     * @param  array  $params  Additional Query Params
+     * @return string          Downloaded content
+     */
+    public function downloadItem($item_id, $params = array())
+    {
+        $item = $this->getItem($item_id);
+        $downloadUrl = $item->{'@content.downloadUrl'};
+        $downloadedFile = $this->downloadFile($downloadUrl);
+
+        return $downloadedFile;
+    }
+
+    /**
      * Validate whether a given behavior is a valid Conflict Behavior
      * @param  string $conflictBehavior Behavior to validate
      * @return bool
      */
     protected function validateConflictBehavior($conflictBehavior)
     {
-        $exists = in_array($conflictBehavior, $this->defaultconflictBehaviors);
+        $exists = in_array($conflictBehavior, $this->allowedBehaviors);
 
         if (!$exists) {
             return false;
@@ -511,8 +567,10 @@ class Client
      * @param  array   $params           Additional Query Parameters
      * @return string                    Created Folder Item
      */
-    public function createFolder($title, $parent_id = null, $behavior = "rename", $params = array())
+    public function createFolder($title, $parent_id = null, $behavior = null, $params = array())
     {
+
+        $behavior = is_null($behavior) ? $this->getDefaultBehavior() : $behavior;
 
         //Drive Path
         $path = $this->getDrivePath();
@@ -538,6 +596,88 @@ class Client
         $body = json_encode($body);
 
         $response = $this->makeRequest("POST", $uri, ["query" => $params, 'body' => $body]);
+        $responseContent = $this->decodeResponse($response);
+
+        return $responseContent;
+    }
+
+    /**
+     * Create a Multipart Body
+     * @param  array $metadata Metadata of the file
+     * @param  string $content  Request Content
+     * @param  string $mimeType Mimetype of the Content
+     * @return string           Multipart Request Body
+     */
+    protected function createMultipartBody($metadata, $content, $mimeType)
+    {
+        $this->boundary = mt_rand();
+        $this->boundary = str_replace('"', '', $this->boundary);
+        $contentType = 'multipart/related; boundary=' . $this->boundary;
+        $related = "--$this->boundary\r\n";
+        $related .= "Content-ID: <metadata>\r\n";
+        $related .= "Content-Type: application/json\r\n";
+        $related .= "\r\n" . json_encode($metadata) . "\r\n";
+        $related .= "--$this->boundary\r\n";
+        $related .= "Content-ID: <content>\r\n";
+        $related .= "Content-Type: $mimeType\r\n";
+        $related .= "\r\n" . $content . "\r\n";
+        $related .= "--$this->boundary--";
+
+        return $related;
+    }
+
+    /**
+     * Upload file
+     * @param  string $file      File Location/Path
+     * @param  string $title     File Name
+     * @param  string $parent_id ID of the Parent Folder. Empty for drive root.
+     * @param  string $behavior  Conflict Behavior
+     * @return Object            Created File Item
+     */
+    public function uploadFile($file, $title = null, $parent_id = null, $behavior = "replace")
+    {
+        if (!file_exists($file)) {
+            echo "File Doesn't exist!";
+            exit();
+        }
+
+        if (is_null($title)) {
+            $title = basename($file);
+        }
+
+        $behavior = is_null($behavior) ? $this->getDefaultBehavior() : $behavior;
+
+        //Drive Path
+        $path = $this->getDrivePath();
+
+        //If the parent id is not provided, use the drive root
+        if (is_null($parent_id)) {
+            $path .= "/root/children";
+        } else {
+            $path .= "/items/{$parent_id}/children";
+        }
+
+        $uri = $this->buildUrl($path);
+
+        //Validate Conflict Behavior
+        if (!$this->validateConflictBehavior($behavior)) {
+            echo "Please enter a valid conflict behavior";
+            exit();
+        }
+
+        $metadata = [
+        "name" => $title,
+        "@name.conflictBehavior" => $behavior,
+        "file" => new \StdClass(),
+        '@content.sourceUrl' => 'cid:content'];
+
+        $content = $this->getFileContents($file);
+        $mimeType = mime_content_type($file);
+
+        $body = $this->createMultipartBody($metadata, $content, $mimeType);
+        $this->setContentType("multipart/related; boundary={$this->boundary}");
+
+        $response = $this->makeRequest("POST", $uri, [], $body);
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
