@@ -5,6 +5,7 @@ use GuzzleHttp\Psr7\Stream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Client as Guzzle;
 use Psr\Http\Message\ResponseInterface;
+use Kunnu\OneDrive\Exceptions\OneDriveClientException;
 
 class Client
 {
@@ -269,7 +270,7 @@ class Client
      *
      * @return \Psr\Http\Message\ResponseInterface
      */
-    protected function makeRequest($method, $uri, $options = [], $body = null, $headers = [])
+    public function makeRequest($method, $uri, $options = [], $body = null, $headers = [])
     {
         //Build headers
         $headers = $this->buildHeaders($headers);
@@ -879,10 +880,43 @@ class Client
         //Json Encode Body
         $body = json_encode($metadata);
 
-        $response = $this->makeRequest('POST', $uri, [], $body, ['Prefer' => 'respond-async']);
-        $responseContent = $this->decodeResponse($response);
+        //Submit an Async Copy Job
+        $copyJob = $this->makeRequest('POST', $uri, [], $body, ['Prefer' => 'respond-async']);
+        //Fetch the Job Status URL
+        $jobStatusUrl = $copyJob->getHeader('Location');
 
-        return $responseContent;
+        $newItem = null;
+        $jobStatus = null;
+
+        $jobCompleted = false;
+
+        //While the Job is not completed,
+        //keep inquiring the job status url for the job status
+        while (!$jobCompleted) {
+            //Fetch Job Status
+            $jobStatus = $this->makeRequest('GET', $jobStatusUrl[0]);
+            //Get the status code
+            $statusCode = $jobStatus->getStatusCode();
+
+            //If the Copying Job was completed
+            if ($statusCode == '303' || $statusCode == '200') {
+                //Mark Job as Completed
+                $jobCompleted = true;
+                //Set the Response
+                $newItem = $this->decodeResponse($jobStatus);
+            } else {
+                //Decode the Status
+                $status = $this->decodeResponse($jobStatus);
+                //If the Job Failed
+                if ($status->status === 'failed') {
+                    throw new OneDriveClientException('API error when copying the file');
+                }
+                //wait some time until the next status check
+                sleep(0.5);
+            }
+        }
+
+        return $newItem;
     }
 
     /**
