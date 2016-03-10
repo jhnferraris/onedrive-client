@@ -268,6 +268,9 @@ class Client
      * @param string|resource|StreamInterface $body    Message Body
      * @param array                           $headers Headers for the message
      *
+     * @throws Exception
+     *
+     *
      * @return \Psr\Http\Message\ResponseInterface
      */
     public function makeRequest($method, $uri, $options = [], $body = null, $headers = [])
@@ -442,14 +445,14 @@ class Client
      * @param bool   $withChildren Get the Item along with it's children
      * @param array  $params       Additional Query Params
      *
+     * @throws OneDriveClientException
+     *
      * @return object
      */
     public function getItem($item_id, $withChildren = false, $params = array())
     {
         if ($item_id == '') {
-            echo 'A valid Item ID is required!';
-
-            return false;
+            throw new OneDriveClientException('Valid item ID is Required!');
         }
         $path = $this->getDrivePath()."/items/{$item_id}";
         $uri = $this->buildUrl($path);
@@ -503,14 +506,14 @@ class Client
      * @param string $item_id ID of the Item
      * @param array  $params  Additional Query Params
      *
+     * @throws OneDriveClientException
+     *
      * @return object
      */
     public function getItemThumbnails($item_id, $params = array())
     {
         if ($item_id == '') {
-            echo 'A valid Item ID is required!';
-
-            return false;
+            throw new OneDriveClientException('Valid item ID is Required!');
         }
         $path = $this->getDrivePath()."/items/{$item_id}/thumbnails";
         $uri = $this->buildUrl($path);
@@ -528,15 +531,16 @@ class Client
      * @param string $thumbnail_id ID of the thumbnail
      * @param array  $params       Additional Query Params
      *
+     *  @throws OneDriveClientException
+     *
      * @return object
      */
     public function getItemThumbnail($item_id, $thumbnail_id = '0', $params = array())
     {
-        if ($item_id == '' || $thumbnail_id == '') {
-            echo 'A valid Item ID and Thumbnail ID are required!';
-
-            return false;
+        if ($item_id == '') {
+            throw new OneDriveClientException('Valid item ID is Required!');
         }
+
         $path = $this->getDrivePath()."/items/{$item_id}/thumbnails/{$thumbnail_id}";
         $uri = $this->buildUrl($path);
 
@@ -621,6 +625,8 @@ class Client
      *
      * @param string $conflictBehavior Behavior to validate
      *
+     * @throws OneDriveClientException
+     *
      * @return bool
      */
     protected function validateConflictBehavior($conflictBehavior)
@@ -628,7 +634,7 @@ class Client
         $exists = in_array($conflictBehavior, $this->allowedBehaviors);
 
         if (!$exists) {
-            return false;
+            throw new OneDriveClientException('Please enter a valid conflict behavior');
         }
 
         return true;
@@ -661,10 +667,7 @@ class Client
         $uri = $this->buildUrl($path);
 
         //Validate Conflict Behavior
-        if (!$this->validateConflictBehavior($behavior)) {
-            echo 'Please enter a valid conflict behavior';
-            exit();
-        }
+        $this->validateConflictBehavior($behavior);
 
         $body = ['name' => $title, '@name.conflictBehavior' => $behavior, 'folder' => new \StdClass()];
 
@@ -712,13 +715,14 @@ class Client
      * @param string $parent_id ID of the Parent Folder. Empty for drive root.
      * @param string $behavior  Conflict Behavior
      *
+     * @throws OneDriveClientException
+     *
      * @return object Created File Item
      */
     public function uploadFile($file, $title = null, $parent_id = null, $behavior = null)
     {
         if (!file_exists($file)) {
-            echo "File Doesn't exist!";
-            exit();
+            throw new OneDriveClientException("File doesn't exist!");
         }
 
         if (is_null($title)) {
@@ -740,10 +744,7 @@ class Client
         $uri = $this->buildUrl($path);
 
         //Validate Conflict Behavior
-        if (!$this->validateConflictBehavior($behavior)) {
-            echo 'Please enter a valid conflict behavior';
-            exit();
-        }
+        $this->validateConflictBehavior($behavior);
 
         $metadata = [
         'name' => $title,
@@ -794,10 +795,7 @@ class Client
         $uri = $this->buildUrl($path);
 
         //Validate Conflict Behavior
-        if (!$this->validateConflictBehavior($behavior)) {
-            echo 'Please enter a valid conflict behavior';
-            exit();
-        }
+        $this->validateConflictBehavior($behavior);
 
         $response = $this->makeRequest('PUT', $uri, [], $contents);
         $responseContent = $this->decodeResponse($response);
@@ -861,6 +859,8 @@ class Client
      * @param string $item_id   ID of the item
      * @param array  $parent_id ID of the parent folder to copy the item to
      * @param string $name      The new name for the copy. If not provided, the original name will be used.
+     *
+     * @throws OneDriveClientException
      *
      * @return object Copied Item
      */
