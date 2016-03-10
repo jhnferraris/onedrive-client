@@ -6,4 +6,7 @@ An easy to use PHP Client for the [OneDrive API](https://dev.onedrive.com/).
 
 
 ## Get Started
-Head over to the [Wiki Section](https://github.com/kunalvarma05/onedrive-client/wiki) to Install and Get started.
+Head over to the **[Getting Started](https://github.com/kunalvarma05/onedrive-client/wiki/Getting-Started-And-Installation)** Wiki section to Install and Get started.
+
+## License
+OneDrive PHP Client is licensed under The MIT License (MIT).
