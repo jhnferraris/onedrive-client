@@ -288,7 +288,7 @@ class Client
             //Send the Request
             return $this->guzzle->send($request, $options);
         } catch (\Exception $e) {
-            echo $e->getMessage();
+            var_dump($e);
             exit();
         }
     }
@@ -962,5 +962,74 @@ class Client
         $responseContent = $this->decodeResponse($response);
 
         return $responseContent;
+    }
+
+    /**
+     * Move an Item to a new Location.
+     *
+     * @param string $url   Url to download content from
+     * @param array  $parent_id ID of the parent folder to copy the item to
+     * @param string $name  The new name for the copy. If not provided, the original name will be used.
+     *
+     * @throws OneDriveClientException
+     *
+     * @return object Downloaded Item
+     */
+    public function uploadFromUrl($url, $parent_id, $name = null)
+    {
+        //Drive Path
+        $path = $this->getDrivePath()."/items/{$parent_id}/children";
+
+        $uri = $this->buildUrl($path);
+
+        $metadata = array();
+
+        $metadata["@content.sourceUrl"] = $url;
+        $metadata['file'] = new \StdClass();
+
+        if (!is_null($name)) {
+            $metadata['name'] = $name;
+        }
+
+        //Json Encode Body
+        $body = json_encode($metadata);
+
+        //Submit an Async Download Job
+        $downloadJob = $this->makeRequest('POST', $uri, [], $body, ['Prefer' => 'respond-async']);
+        //Fetch the Job Status URL
+        $jobStatusUrl = $downloadJob->getHeader('Location');
+
+        $newItem = null;
+        $jobStatus = null;
+
+        $jobCompleted = false;
+
+        //While the Job is not completed,
+        //keep inquiring the job status url for the job status
+        while (!$jobCompleted) {
+            //Fetch Job Status
+            $jobStatus = $this->makeRequest('GET', $jobStatusUrl[0]);
+            //Get the status code
+            $statusCode = $jobStatus->getStatusCode();
+
+            //If the Downloading Job was completed
+            if ($statusCode == '303' || $statusCode == '200') {
+                //Mark Job as Completed
+                $jobCompleted = true;
+                //Set the Response
+                $newItem = $this->decodeResponse($jobStatus);
+            } else {
+                //Decode the Status
+                $status = $this->decodeResponse($jobStatus);
+                //If the Job Failed
+                if ($status->status === 'failed') {
+                    throw new OneDriveClientException('API error when downloading the file');
+                }
+                //wait some time until the next status check
+                sleep(0.5);
+            }
+        }
+
+        return $newItem;
     }
 }
