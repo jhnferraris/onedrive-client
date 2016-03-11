@@ -968,17 +968,24 @@ class Client
      * Move an Item to a new Location.
      *
      * @param string $url   Url to download content from
-     * @param array  $parent_id ID of the parent folder to copy the item to
      * @param string $name  The new name for the copy. If not provided, the original name will be used.
+     * @param array  $parent_id ID of the parent folder to copy the item to
      *
      * @throws OneDriveClientException
      *
      * @return object Downloaded Item
      */
-    public function uploadFromUrl($url, $parent_id, $name = null)
+    public function uploadFromUrl($url, $name = null, $parent_id = null)
     {
         //Drive Path
-        $path = $this->getDrivePath()."/items/{$parent_id}/children";
+        $path = $this->getDrivePath();
+
+        //If the parent id is not provided, use the drive root
+        if (is_null($parent_id)) {
+            $path .= '/root/children';
+        } else {
+            $path .= "/items/{$parent_id}/children";
+        }
 
         $uri = $this->buildUrl($path);
 
