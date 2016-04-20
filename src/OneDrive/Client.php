@@ -934,8 +934,7 @@ class Client
         $uri = $this->buildUrl($path);
 
         $response = $this->makeRequest('DELETE', $uri);
-        $response = array('id' => $item_id);
-        $responseContent = $this->decodeResponse($response);
+        $responseContent = (object) array('id' => $item_id);
 
         return $responseContent;
     }
