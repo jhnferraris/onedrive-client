@@ -242,7 +242,7 @@ class Client
      */
     protected function buildUrl($path = '')
     {
-        $path = urlencode($path);
+        // $path = urlencode($path);
 
         return $this->getBasePath().$path;
     }
@@ -288,7 +288,7 @@ class Client
             //Send the Request
             return $this->guzzle->send($request, $options);
         } catch (\Exception $e) {
-            var_dump($e);
+            print_r($e->getMessage());
             exit();
         }
     }
